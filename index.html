@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- SEO: Character Set and Viewport (Core Vitals) -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO: Core Metadata -->
+    <title>Flux Weaver</title>
+    <meta name="description" content="Experience Flux Weaver, an interactive WebGL art generator. Create and manipulate mesmerizing, fluid-like visual patterns in real-time. Adjust waves, colors, and speed to craft your own unique digital art.">
+    <meta name="keywords" content="Flux Weaver, interactive art, WebGL, shader, generative art, visualizer, digital art, creative coding, three.js, real-time graphics, abstract art">
+    <meta name="author" content="Chris Pirillo">
+    <link rel="canonical" href="https://pirillo.com/arcade/flux-weaver.html">
+
+    <!-- SEO: Open Graph Metadata (for social sharing on Facebook, LinkedIn, etc.) -->
+    <meta property="og:title" content="Flux Weaver">
+    <meta property="og:description" content="Create and manipulate mesmerizing, fluid-like visual patterns in real-time with this interactive WebGL art generator.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pirillo.com/arcade/flux-weaver.html">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/flux-weaver.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pirillo's Arcade">
+
+    <!-- SEO: Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ChrisPirillo">
+    <meta name="twitter:creator" content="@ChrisPirillo">
+    <meta name="twitter:title" content="Flux Weaver">
+    <meta name="twitter:description" content="An interactive WebGL art generator for creating mesmerizing, fluid-like visual patterns.">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/flux-weaver.png">
+
+    <!-- Performance: Resource Hints to speed up critical connections and fetches -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" as="script">
+    
+    <!-- Performance & Core Vitals: Optimized Font Loading with font-display: swap -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1CQ4D3VQ3L');
+    </script>
+
+    <!-- SEO: JSON-LD Structured Data for Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Flux Weaver",
+      "applicationCategory": ["GameApplication", "MultimediaApplication"],
+      "operatingSystem": "WEB",
+      "url": "https://pirillo.com/arcade/flux-weaver.html",
+      "author": {
+        "@type": "Person",
+        "name": "Chris Pirillo",
+        "url": "https://chris.pirillo.com/"
+      },
+      "image": "https://pirillo.com/arcade/images/flux-weaver.png",
+      "description": "An interactive WebGL art generator for creating and manipulating mesmerizing, fluid-like visual patterns in real-time.",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Pirillo's Arcade",
+        "url": "https://pirillo.com/arcade/"
+      }
+    }
+    </script>
+
+    <!-- Performance: Critical CSS is inlined below. No external CSS file needed. -->
+    <style>
+        :root {
+            --bg-color: #0a0a0f;
+            --panel-bg: rgba(20, 20, 30, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0b0;
+            --accent-color: #4f46e5;
+            --accent-hover: #6366f1;
+        }
+
+        /* Force html and body to fill the viewport */
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            background-color: var(--bg-color);
+        }
+
+        /* Canvas should be fixed to the viewport, covering everything */
+        #shaderCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Header container for menu button */
+        #app-header {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Menu Toggle Button (Hamburger) */
+        #menu-toggle {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.4s ease;
+            flex-shrink: 0;
+            opacity: 1;
+        }
+
+        /* Hide the main menu toggle when the nav is open */
+        body.nav-open #menu-toggle {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        #menu-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.5);
+            transform: scale(1.1);
+        }
+
+        .hamburger-icon {
+            width: 24px;
+            height: 18px;
+            position: relative;
+        }
+
+        .hamburger-icon span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: var(--text-primary);
+            border-radius: 3px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+
+        .hamburger-icon span:nth-child(1) { top: 0px; }
+        .hamburger-icon span:nth-child(2) { top: 7px; }
+        .hamburger-icon span:nth-child(3) { bottom: 0px; }
+
+        /* Side Navigation Panel (Glassmorphism) */
+        #side-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px) saturate(150%);
+            -webkit-backdrop-filter: blur(12px) saturate(150%);
+            border-right: 1px solid var(--border-color);
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            padding: 1.5rem;
+            padding-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        body.nav-open #side-nav {
+            transform: translateX(0);
+        }
+
+        /* New header for the side panel */
+        .side-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .close-btn {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .setting-label svg {
+            margin-right: 0.75rem;
+            width: 20px;
+            height: 20px;
+            stroke: var(--text-secondary);
+        }
+
+        .control-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Modern Slider Styles */
+        input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            outline: none;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            border: 3px solid var(--bg-color);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.1);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            border: 3px solid var(--bg-color);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.1);
+        }
+
+        .value-display {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            min-width: 45px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* Modern Color Picker */
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 44px;
+            height: 44px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            padding: 0;
+            cursor: pointer;
+            background-color: transparent;
+            overflow: hidden;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+        input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+    </style>
+</head>
+<body>
+    <!-- SEO: Using semantic HTML tags for better document structure -->
+    <header id="app-header" role="banner">
+        <div id="menu-toggle" aria-label="Open settings menu" role="button" tabindex="0">
+            <div class="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- SEO: Changed div to nav for semantic navigation landmark -->
+    <nav id="side-nav" aria-label="Main settings">
+        <div class="side-nav-header">
+            <!-- SEO: Using h1 for the main title, assuming this is the primary heading -->
+            <h1 class="panel-title">Flux Weaver</h1>
+            <span class="close-btn" id="close-nav" aria-label="Close settings menu" role="button" tabindex="0">&times;</span>
+        </div>
+
+        <div class="setting-group">
+            <label for="animation-speed" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 16 4-4-4-4"></path></svg>
+                Animation Speed
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="animation-speed" min="0.01" max="5.0" step="0.01" value="0.5">
+                <div class="value-display" id="animation-speed-value">0.50</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="num-iterations" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                Number of Waves
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="num-iterations" min="1" max="15" step="1" value="8">
+                <div class="value-display" id="num-iterations-value">8</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="wave-amplitude" class="setting-label">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+                Wave Amplitude
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="wave-amplitude" min="0.1" max="1.0" step="0.01" value="0.3">
+                <div class="value-display" id="wave-amplitude-value">0.30</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="wave-frequency-x" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Wave Frequency X
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="wave-frequency-x" min="0.5" max="5.0" step="0.01" value="1.6">
+                <div class="value-display" id="wave-frequency-x-value">1.60</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="wave-shift-t" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                Wave Shift
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="wave-shift-t" min="0.0" max="1.0" step="0.01" value="0.4">
+                <div class="value-display" id="wave-shift-t-value">0.40</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="wave-offset-i" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 17l5-5-5-5"></path><path d="M8 17l5-5-5-5"></path></svg>
+                Wave Offset
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="wave-offset-i" min="0.0" max="10.0" step="0.1" value="4.3">
+                <div class="value-display" id="wave-offset-i-value">4.3</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="smoothstep-factor" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3,3 C3,3 12,21 21,21"></path></svg>
+                Smoothstep Factor
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="smoothstep-factor" min="0.5" max="5.0" step="0.1" value="2.5">
+                <div class="value-display" id="smoothstep-factor-value">2.5</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="color-y-offset" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M18 11l-6-6-6 6"></path></svg>
+                Color Y Offset
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="color-y-offset" min="0.0" max="0.1" step="0.001" value="0.04">
+                <div class="value-display" id="color-y-offset-value">0.040</div>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="color-i-multiplier" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 18L12 6"></path><path d="M15 9L12 6L9 9"></path><path d="M18 15L12 9L6 15"></path></svg>
+                Color I Multiplier
+            </label>
+            <div class="control-wrapper">
+                <input type="range" id="color-i-multiplier" min="0.0" max="1.0" step="0.01" value="0.4">
+                <div class="value-display" id="color-i-multiplier-value">0.40</div>
+            </div>
+        </div>
+        
+        <div class="setting-group">
+            <label for="base-color" class="setting-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>
+                Base Color
+            </label>
+            <div class="control-wrapper">
+                <input type="color" id="base-color" value="#001426">
+            </div>
+        </div>
+
+    </nav>
+
+    <!-- SEO: The main content of the page is the interactive canvas -->
+    <main>
+        <canvas id="shaderCanvas" role="img" aria-label="An interactive, animated abstract pattern of flowing and weaving colorful lines."></canvas>
+    </main>
+
+    <!-- Performance: Moved render-blocking script from <head> to non-blocking position before it's needed. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- UNMODIFIED: Production application script remains as-is. -->
+    <script>
+        // --- Three.js and Shader Logic ---
+        let scene, camera, renderer, material, planeMesh; // planeMesh is now globally accessible
+        let startTime = Date.now();
+
+        function init() {
+            const canvas = document.getElementById('shaderCanvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 1;
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const fragmentShader = `
+                uniform float u_time;
+                uniform vec2 u_resolution;
+                uniform float u_animation_speed;
+                uniform vec3 u_base_color;
+                uniform float u_num_iterations;
+                uniform float u_wave_amplitude;
+                uniform float u_wave_frequency_x;
+                uniform float u_wave_shift_t;
+                uniform float u_wave_offset_i;
+                uniform float u_smoothstep_factor;
+                uniform float u_color_y_offset;
+                uniform float u_color_i_multiplier;
+
+                void main() {
+                    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+                    uv = uv * 2.0 - 1.0;
+                    
+                    uv.x *= u_resolution.x / u_resolution.y;
+
+                    float f,b,x,y;
+                    vec3 c = u_base_color;
+                    float t = u_time * u_animation_speed;
+
+                    for(float i=1.0; i<u_num_iterations; i++){
+                        x=uv.x*u_wave_frequency_x+t*sin(i*3.3)*u_wave_shift_t+i*u_wave_offset_i;
+                        f=u_wave_amplitude*cos(i)*sin(x);
+                        b=sin(uv.x*sin(i+t*0.2)*3.4+cos(i+7.1))*0.1+0.896;
+                        y=smoothstep(b,1.0,1.0-abs(uv.y-f))*(b-0.8)*u_smoothstep_factor;
+                        c+=vec3(y,y-u_color_y_offset,y*i*u_color_i_multiplier);
+                    }
+                    gl_FragColor = vec4(c,1.0);
+                }
+            `;
+
+            material = new THREE.ShaderMaterial({
+                uniforms: {
+                    u_time: { value: 0.0 },
+                    u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    u_animation_speed: { value: 0.5 },
+                    u_base_color: { value: new THREE.Color("#001426") },
+                    u_num_iterations: { value: 8.0 },
+                    u_wave_amplitude: { value: 0.3 },
+                    u_wave_frequency_x: { value: 1.6 },
+                    u_wave_shift_t: { value: 0.4 },
+                    u_wave_offset_i: { value: 4.3 },
+                    u_smoothstep_factor: { value: 2.5 },
+                    u_color_y_offset: { value: 0.04 },
+                    u_color_i_multiplier: { value: 0.4 }
+                },
+                vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                fragmentShader: fragmentShader
+            });
+
+            // Use a 1x1 plane so scaling works intuitively
+            planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+            scene.add(planeMesh);
+
+            window.addEventListener('resize', onWindowResize, false);
+            setupInteractions();
+        }
+
+        function onWindowResize() {
+            // Update camera and renderer as before
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            material.uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+
+            // Scale the plane to fill the camera's view
+            const distance = camera.position.z - planeMesh.position.z;
+            const vFov = (camera.fov * Math.PI) / 180; // vertical fov to radians
+            const planeHeight = 2 * Math.tan(vFov / 2) * distance;
+            const planeWidth = planeHeight * camera.aspect;
+            planeMesh.scale.set(planeWidth, planeHeight, 1);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            material.uniforms.u_time.value = (Date.now() - startTime) * 0.001;
+            renderer.render(scene, camera);
+        }
+
+        // --- UI Interaction Logic ---
+        function setupInteractions() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const closeNavBtn = document.getElementById('close-nav');
+            
+            menuToggle.addEventListener('click', () => {
+                document.body.classList.add('nav-open');
+            });
+            
+            closeNavBtn.addEventListener('click', () => {
+                document.body.classList.remove('nav-open');
+            });
+
+            function setupSliderControl(sliderId, valueDisplayId, uniformName, toFixed) {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(valueDisplayId);
+                
+                if (!slider || !valueDisplay) return;
+
+                valueDisplay.textContent = parseFloat(slider.value).toFixed(toFixed);
+
+                slider.addEventListener('input', (event) => {
+                    const value = parseFloat(event.target.value);
+                    if(material.uniforms[uniformName]) {
+                        material.uniforms[uniformName].value = value;
+                    }
+                    valueDisplay.textContent = value.toFixed(toFixed);
+                });
+            }
+
+            // Setup all sliders
+            setupSliderControl('animation-speed', 'animation-speed-value', 'u_animation_speed', 2);
+            setupSliderControl('num-iterations', 'num-iterations-value', 'u_num_iterations', 0);
+            setupSliderControl('wave-amplitude', 'wave-amplitude-value', 'u_wave_amplitude', 2);
+            setupSliderControl('wave-frequency-x', 'wave-frequency-x-value', 'u_wave_frequency_x', 2);
+            setupSliderControl('wave-shift-t', 'wave-shift-t-value', 'u_wave_shift_t', 2);
+            setupSliderControl('wave-offset-i', 'wave-offset-i-value', 'u_wave_offset_i', 1);
+            setupSliderControl('smoothstep-factor', 'smoothstep-factor-value', 'u_smoothstep_factor', 1);
+            setupSliderControl('color-y-offset', 'color-y-offset-value', 'u_color_y_offset', 3);
+            setupSliderControl('color-i-multiplier', 'color-i-multiplier-value', 'u_color_i_multiplier', 2);
+
+            // Base Color Picker
+            const baseColorPicker = document.getElementById('base-color');
+            baseColorPicker.addEventListener('input', (event) => {
+                const hex = event.target.value;
+                material.uniforms.u_base_color.value.set(hex);
+            });
+        }
+        
+        // --- App Initialization ---
+        window.onload = () => {
+            init();
+            // Manually call onWindowResize once after init to ensure correct initial sizing
+            onWindowResize();
+            animate();
+        };
+    </script>
+</body>
+</html>
